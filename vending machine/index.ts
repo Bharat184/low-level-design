@@ -1,130 +1,56 @@
-class VendingMachine {
-    static instance: VendingMachine | null = null;
-    private inventory: Inventory;
 
-    private constructor() {
-        this.inventory = new Inventory(3);
-    }
+import { VendingMachine } from "./VendingMachine";
+import { ItemShelf, ItemShelfSection } from "./Inventory";
 
-    static getInstance() {
-        if (VendingMachine.instance) {
-            return VendingMachine.instance;
-        }
-        return VendingMachine.instance = new VendingMachine();
-    }
-
-    getInventory(): Inventory {
-        return this.inventory;
-    }
-}
-
-class Product {
-    private name: string;
-    private price: number;
-
-    constructor(name: string, price: number) {
-        this.name = name;
-        this.price = price;
-    }
-
-    public getName(): string {
-        return this.name;
-    }
-
-    public getPrice(): number {
-        return this.price;
-    }
-}
-
-class ItemShelfSection {
-    private product: Product;
-    private quantity: number = 0;
-    private limit: number;
-
-    constructor(product: Product, limit: number) {
-        this.limit = limit;
-        this.product = product;
-    }
-
-    public addQuantity(quantity: number): void {
-        if (this.quantity + quantity > this.limit) {
-            throw new Error('Too many quantity!');
-        }
-        this.quantity += quantity;
-    }
-
-    public getQuantity(): number {
-        return this.quantity;
-    }
-
-    public getProduct(): Product {
-        return this.product;
-    }
-}
-
-class ItemShelf {
-    private products: (ItemShelfSection | null)[] = [];
-    private limit: number;
-    
-    constructor(limit: number) {
-        this.limit = limit;
-        for (let i=1;i<=limit;i++) {
-            this.products.push(null);
-        }
-    }
-
-    public addProduct(column: number, itemShelfSection: ItemShelfSection): void {
-        if (column > this.limit) {
-            throw new Error('Invalid Column!');
-        }
-        
-        this.products[column] = itemShelfSection;
-    }
-
-    public getProducts(): (ItemShelfSection | null)[] {
-        return this.products;
-    }
-
-}
-
-class Inventory {
-    private itemShelves: ItemShelf[] = [];
-    private limit;
-
-    constructor(limit: number) {
-        this.limit = limit;
-    }
-
-    addItemShelves(itemShelf: ItemShelf): void {
-        if (this.itemShelves.length >= this.limit) {
-            throw new Error('Max Item Shelf Added');
-        }
-        this.itemShelves.push(itemShelf);
-    }
-
-    displayItems(): void {
-        this.itemShelves.forEach(itemShelf => {
-            let shelf = '';
-            itemShelf.getProducts().forEach((section) => {
-                if (section) {
-                    shelf += `| ${section.getProduct().getName()}: ${section.getQuantity()} `;
-                } else {
-                    shelf += `|      EMPTY   `;
-                }
-            });
-            console.log(shelf);
-            console.log("\n");
-        });
-    }
-}
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception: ' + err);
+  process.exit(1);
+});
 
 const vendingMachine = VendingMachine.getInstance();
-const vendingMachineInventory = vendingMachine.getInventory();
-vendingMachineInventory.addItemShelves(new ItemShelf(5));
-vendingMachineInventory.addItemShelves(new ItemShelf(8));
-vendingMachineInventory.addItemShelves(new ItemShelf(10));
-vendingMachineInventory.displayItems();
+const vendingMachineInventory = vendingMachine.inventory;
 
+const chips = vendingMachineInventory.createProduct('chips', 30);
+const dietCoke = vendingMachineInventory.createProduct('diet coke', 70);
+const water = vendingMachineInventory.createProduct('water', 20);
+vendingMachineInventory.addProductMap(chips.getName(), 0);
+vendingMachineInventory.addProductMap(dietCoke.getName(), 0);
+vendingMachineInventory.addProductMap(water.getName(), 0);
+
+const itemShelf1 = new ItemShelf(vendingMachineInventory, 2);
+itemShelf1.addProduct(0, new ItemShelfSection(chips, 5));
+itemShelf1.addProduct(1, new ItemShelfSection(chips, 5));
+itemShelf1.addQuantity(0, 5);
+itemShelf1.addQuantity(1, 5);
+
+const itemShelf2 = new ItemShelf(vendingMachineInventory, 3);
+itemShelf2.addProduct(0, new ItemShelfSection(dietCoke, 10));
+itemShelf2.addQuantity(0, 10);
+
+const itemShelf3 = new ItemShelf(vendingMachineInventory, 4);
+itemShelf3.addProduct(3, new ItemShelfSection(water, 6));
+itemShelf3.addQuantity(3, 6);
+
+vendingMachineInventory.addItemShelves(itemShelf1);
+vendingMachineInventory.addItemShelves(itemShelf2);
+vendingMachineInventory.addItemShelves(itemShelf3);
+// vendingMachineInventory.displayItems();
+
+vendingMachine.vendingMachineState = vendingMachine.vendingMachineState.next();
+vendingMachine.vendingMachineState.addMoney(300);
+vendingMachine.vendingMachineState = vendingMachine.vendingMachineState.next();
+vendingMachine.vendingMachineState.selectProduct(chips,8);
+// vendingMachine.vendingMachineState.selectProduct(dietCoke, 10);
+vendingMachine.vendingMachineState = vendingMachine.vendingMachineState.next();
+// vendingMachine.vendingMachineState.cancel();
+vendingMachine.vendingMachineState.dispenseProduct();
+vendingMachine.vendingMachineState = vendingMachine.vendingMachineState.next().next();
+vendingMachine.vendingMachineState.addMoney(60);
+vendingMachine.vendingMachineState = vendingMachine.vendingMachineState.next();
+vendingMachine.vendingMachineState.selectProduct(chips,2);
+vendingMachine.vendingMachineState = vendingMachine.vendingMachineState.next();
+vendingMachine.vendingMachineState.dispenseProduct();
+vendingMachine.vendingMachineState = vendingMachine.vendingMachineState.next();
 
 
 
